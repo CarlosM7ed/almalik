@@ -1,0 +1,175 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  brand         String   @default("Alma Lik")
+  description   String
+  longDescription String  @default("")
+  price         Float
+  costPrice     Float
+  category      String
+  gender        String   @default("unissex")
+  intensity     String   @default("moderada")
+  occasion      String   @default("versátil")
+  timeOfDay     String   @default("qualquer momento")
+  olfactiveFamily String @default("oriental")
+  fixation      String   @default("6-8 horas")
+  projection    String   @default("moderada")
+  notesTop      String   @default("")
+  notesHeart    String   @default("")
+  notesBase     String   @default("")
+  notesKey      String   @default("")
+  origin        String   @default("E.A.U.")
+  forWho        String   @default("Para todos")
+  imageUrl      String   @default("")
+  images        String   @default("[]")
+  rating        Float    @default(4.5)
+  reviewCount   Int      @default(0)
+  stock         Int      @default(50)
+  isFeatured    Boolean  @default(false)
+  isNew         Boolean  @default(false)
+  isBestseller  Boolean  @default(false)
+  isKit         Boolean  @default(false)
+  kitContents   String   @default("")
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  orderItems    OrderItem[]
+  reviews       Review[]
+  stockNotifications StockNotification[]
+}
+
+model Review {
+  id          String   @id @default(cuid())
+  productId   String
+  productName String
+  author      String
+  rating      Int      @default(5)
+  title       String   @default("")
+  comment     String
+  verified    Boolean  @default(false)
+  helpful     Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+model Order {
+  id            String     @id @default(cuid())
+  customerName  String
+  customerEmail String
+  customerPhone String
+  address       String
+  city          String
+  postalCode    String
+  country       String     @default("PT")
+  paymentMethod String     @default("Pagamento na Entrega")
+  status        String     @default("pending")
+  total         Float
+  affiliateRef  String     @default("")
+  items         OrderItem[]
+  commissions   Commission[]
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Float
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+model StockNotification {
+  id          String   @id @default(cuid())
+  email       String
+  productId   String
+  productName String
+  createdAt   DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([productId])
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("customer")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Affiliate {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  password      String
+  referralCode  String   @unique
+  commissionRate Float   @default(0.3)
+  isActive      Boolean  @default(true)
+  balance       Float    @default(0)
+  totalEarned   Float    @default(0)
+  totalWithdrawn Float   @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  commissions   Commission[]
+  withdrawals   Withdrawal[]
+}
+
+model Commission {
+  id          String   @id @default(cuid())
+  affiliateId String
+  orderId     String
+  orderTotal  Float
+  rate        Float
+  amount      Float
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+
+  affiliate   Affiliate @relation(fields: [affiliateId], references: [id])
+  order       Order     @relation(fields: [orderId], references: [id])
+
+  @@index([affiliateId])
+  @@index([orderId])
+}
+
+model Withdrawal {
+  id            String   @id @default(cuid())
+  affiliateId   String
+  amount        Float
+  status        String   @default("pending")
+  iban          String   @default("")
+  accountHolder String   @default("")
+  notes         String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  affiliate     Affiliate @relation(fields: [affiliateId], references: [id])
+
+  @@index([affiliateId])
+}
